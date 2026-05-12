@@ -13,13 +13,13 @@ RUN apt-get update && apt-get install -y \
         lsb-release \
         unzip \
         git \
-    # --- Repositórios Oficiais ---
+    # --- Repositórios Oficiais (Nginx, OpenLiteSpeed, PHP Sury) ---
     && curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor -o /usr/share/keyrings/nginx.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/nginx.gpg] https://nginx.org/packages/mainline/debian bookworm nginx" > /etc/apt/sources.list.d/nginx.list \
     && wget -O - https://rpms.litespeedtech.com/debian/lst_repo.gpg | gpg --dearmor -o /usr/share/keyrings/litespeed.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/litespeed.gpg] https://rpms.litespeedtech.com/debian/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/openlitespeed.list \
     && wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg \
-    && echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php.list \
+    && echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list \
     # --- Instalação (Servidores + PHP Full) ---
     && apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -48,20 +48,20 @@ RUN ARCH=$(uname -m); \
     else echo "ionCube: Unsupported arch - skipping"; exit 0; fi; \
     cd /tmp && wget -q "https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_${IONCUBE_ARCH}.tar.gz" \
     && tar xzf ioncube_loaders_lin_${IONCUBE_ARCH}.tar.gz \
-    && PHP_EXT_DIR=$(php -i | grep extension_dir | cut -d' ' -f5) \
-    && cp "ioncube/ioncube_loader_lin_${PHP_VERSION}.so" "$PHP_EXT_DIR/" || echo "ionCube not found for PHP ${PHP_VERSION}" \
-    && echo "zend_extension=ioncube_loader_lin_${PHP_VERSION}.so" > /etc/php/${PHP_VERSION}/fpm/conf.d/00-ioncube.ini \
-    && echo "zend_extension=ioncube_loader_lin_${PHP_VERSION}.so" > /etc/php/${PHP_VERSION}/cli/conf.d/00-ioncube.ini \
+    && PHP_EXT_DIR=$(php -r "echo ini_get('extension_dir');") \
+    && if [ -f "ioncube/ioncube_loader_lin_${PHP_VERSION}.so" ]; then \
+        cp "ioncube/ioncube_loader_lin_${PHP_VERSION}.so" "$PHP_EXT_DIR/"; \
+        echo "zend_extension=ioncube_loader_lin_${PHP_VERSION}.so" > /etc/php/${PHP_VERSION}/fpm/conf.d/00-ioncube.ini; \
+        echo "zend_extension=ioncube_loader_lin_${PHP_VERSION}.so" > /etc/php/${PHP_VERSION}/cli/conf.d/00-ioncube.ini; \
+    fi \
     && rm -rf /tmp/ioncube*
 
-# Limpeza Final
+# Limpeza Final e User Setup
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/*
-
 RUN useradd -m -d /home/container/ -s /bin/bash container
+
+USER container
+ENV USER=container HOME=/home/container
 WORKDIR /home/container
 
-COPY ./entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 STOPSIGNAL SIGINT
-CMD ["/entrypoint.sh"]
