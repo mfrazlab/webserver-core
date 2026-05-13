@@ -14,16 +14,19 @@ RUN apt-get update && apt-get install -y \
         unzip \
         git \
     # --- Repositórios Oficiais ---
+    # Nginx
     && curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor -o /usr/share/keyrings/nginx.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/nginx.gpg] https://nginx.org/packages/mainline/debian bookworm nginx" > /etc/apt/sources.list.d/nginx.list \
-    && wget -O - https://rpms.litespeedtech.com/debian/lst_repo.gpg | gpg --dearmor -o /usr/share/keyrings/litespeed.gpg \
-    && echo "deb [signed-by=/usr/share/keyrings/litespeed.gpg] https://rpms.litespeedtech.com/debian/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/openlitespeed.list \
+    # Caddy
+    && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg \
+    && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' > /etc/apt/sources.list.d/caddy-stable.list \
+    # PHP
     && wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg \
     && echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list \
     # --- Instalação ---
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-        nginx apache2 openlitespeed \
+        nginx apache2 caddy \
         php${PHP_VERSION} php${PHP_VERSION}-fpm php${PHP_VERSION}-cli php${PHP_VERSION}-common \
         php${PHP_VERSION}-mysql php${PHP_VERSION}-pdo php${PHP_VERSION}-xml php${PHP_VERSION}-bcmath \
         php${PHP_VERSION}-calendar php${PHP_VERSION}-ctype php${PHP_VERSION}-curl php${PHP_VERSION}-dom \
@@ -38,12 +41,22 @@ RUN apt-get update && apt-get install -y \
         php${PHP_VERSION}-tokenizer php${PHP_VERSION}-xmlreader php${PHP_VERSION}-xmlwriter php${PHP_VERSION}-xsl \
         php${PHP_VERSION}-zip php${PHP_VERSION}-mailparse php${PHP_VERSION}-inotify php${PHP_VERSION}-maxminddb \
         php${PHP_VERSION}-protobuf php${PHP_VERSION}-opcache php${PHP_VERSION}-memcached \
-    && ln -s /usr/local/lsws/bin/openlitespeed /usr/bin/openlitespeed \
     # --- Composer ---
     &&  curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
     # --- Limpeza de Camada (DEVE ser aqui para reduzir o tamanho real do upload) ---
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# --- Traefik (Multi-Arch) ---
+RUN ARCH=$(uname -m); \
+    if [ "$ARCH" = "x86_64" ]; then TRAEFIK_ARCH="amd64"; \
+    elif [ "$ARCH" = "aarch64" ]; then TRAEFIK_ARCH="arm64"; \
+    else echo "Traefik: Unsupported arch - skipping"; exit 0; fi; \
+    TRAEFIK_VERSION="v3.0.0"; \
+    curl -sL "https://github.com/traefik/traefik/releases/download/${TRAEFIK_VERSION}/traefik_${TRAEFIK_VERSION}_linux_${TRAEFIK_ARCH}.tar.gz" -o /tmp/traefik.tar.gz \
+    && tar xzf /tmp/traefik.tar.gz -C /usr/local/bin traefik \
+    && chmod +x /usr/local/bin/traefik \
+    && rm /tmp/traefik.tar.gz
 
 # --- ionCube Loader (Multi-Arch) ---
 RUN ARCH=$(uname -m); \
