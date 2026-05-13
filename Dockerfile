@@ -1,6 +1,6 @@
 FROM debian:bookworm-slim
 
-LABEL author="Ym0t" maintainer="YmoT@tuta.com"
+LABEL author="murillo" maintainer="murillofrazaocunha@gmail.com"
 
 ARG PHP_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
@@ -61,7 +61,7 @@ RUN ARCH=$(uname -m); \
     && rm -rf /tmp/ioncube*
 
 # User Setup
-# RUN useradd -m -d /home/container/ -s /bin/bash container
+RUN useradd -m -d /home/container/ -s /bin/bash container
 
 # USER container
 # ENV USER=container HOME=/home/container
