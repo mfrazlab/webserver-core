@@ -13,13 +13,34 @@ jobs:
   build:
     strategy:
       fail-fast: false
+
       matrix:
         include:
-          - arch: amd64
+          # PHP 8.2
+          - php-version: "8.2"
+            arch: amd64
             runner: ubuntu-latest
 
-          # ARM NATIVO
-          - arch: arm64
+          - php-version: "8.2"
+            arch: arm64
+            runner: ubuntu-24.04-arm
+
+          # PHP 8.3
+          - php-version: "8.3"
+            arch: amd64
+            runner: ubuntu-latest
+
+          - php-version: "8.3"
+            arch: arm64
+            runner: ubuntu-24.04-arm
+
+          # PHP 8.4
+          - php-version: "8.4"
+            arch: amd64
+            runner: ubuntu-latest
+
+          - php-version: "8.4"
+            arch: arm64
             runner: ubuntu-24.04-arm
 
     runs-on: ${{ matrix.runner }}
@@ -47,10 +68,14 @@ jobs:
         with:
           context: .
           push: true
+
           platforms: linux/${{ matrix.arch }}
 
+          build-args: |
+            PHP_VERSION=${{ matrix.php-version }}
+
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.arch }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:php${{ matrix.php-version }}-${{ matrix.arch }}
 
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -63,6 +88,10 @@ jobs:
       contents: read
       packages: write
 
+    strategy:
+      matrix:
+        php-version: [ "8.2", "8.3", "8.4" ]
+
     steps:
       - name: Log into GitHub Container Registry
         uses: docker/login-action@v3
@@ -74,7 +103,14 @@ jobs:
       - name: Create and push multi-arch manifest
         run: |
           docker buildx imagetools create \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:php${{ matrix.php-version }} \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:php${{ matrix.php-version }}-amd64 \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:php${{ matrix.php-version }}-arm64
+
+      - name: Tag PHP 8.3 as latest
+        if: matrix.php-version == '8.3'
+        run: |
+          docker buildx imagetools create \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:multiarch \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:amd64 \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:arm64
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:php8.3-amd64 \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:php8.3-arm64
