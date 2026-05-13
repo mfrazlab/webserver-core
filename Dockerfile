@@ -47,16 +47,13 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# --- Traefik (Multi-Arch) ---
+# --- Cloudflared (Multi-Arch) ---
 RUN ARCH=$(uname -m); \
-    if [ "$ARCH" = "x86_64" ]; then TRAEFIK_ARCH="amd64"; \
-    elif [ "$ARCH" = "aarch64" ]; then TRAEFIK_ARCH="arm64"; \
-    else echo "Traefik: Unsupported arch - skipping"; exit 0; fi; \
-    TRAEFIK_VERSION="v3.0.0"; \
-    curl -sL "https://github.com/traefik/traefik/releases/download/${TRAEFIK_VERSION}/traefik_${TRAEFIK_VERSION}_linux_${TRAEFIK_ARCH}.tar.gz" -o /tmp/traefik.tar.gz \
-    && tar xzf /tmp/traefik.tar.gz -C /usr/local/bin traefik \
-    && chmod +x /usr/local/bin/traefik \
-    && rm /tmp/traefik.tar.gz
+    if [ "$ARCH" = "x86_64" ]; then CF_ARCH="amd64"; \
+    elif [ "$ARCH" = "aarch64" ]; then CF_ARCH="arm64"; \
+    else echo "Cloudflared: Unsupported arch - skipping"; exit 0; fi; \
+    curl -L "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${CF_ARCH}" -o /usr/local/bin/cloudflared \
+    && chmod +x /usr/local/bin/cloudflared
 
 # --- ionCube Loader (Multi-Arch) ---
 RUN ARCH=$(uname -m); \
