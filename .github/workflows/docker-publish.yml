@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 env:
-  # Esse é o "Docker do GitHub"
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
@@ -15,12 +14,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write # Permissão para postar a imagem no seu repo
+      packages: write
 
     strategy:
       fail-fast: false
       matrix:
-        php-version: [ '8.2', '8.3', '8.4', '8.5' ]
+        # AVISO: PHP 8.5 provavelmente vai falhar pois ainda não existe no PPA do Sury
+        php-version: [ '8.2', '8.3', '8.4' ] 
 
     steps:
       - name: Checkout repository
@@ -44,10 +44,15 @@ jobs:
         with:
           context: .
           push: true
+          # Se você não for rodar em processadores ARM (como Mac M1/M2/M3), 
+          # deixe apenas linux/amd64 para o build levar 2 minutos ao invés de 10.
           platforms: linux/amd64,linux/arm64
           build-args: |
             PHP_VERSION=${{ matrix.php-version }}
-          # Aqui ele gera o link automático: ghcr.io/usuario/repo:php8.3
+          # CORREÇÃO: trocado _ por -
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:php${{ matrix.php_version }}
-            ${{ matrix.php_version == '8.3' && format('{0}/{1}:latest', env.REGISTRY, env.IMAGE_NAME) || '' }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:php${{ matrix.php-version }}
+            ${{ matrix.php-version == '8.3' && format('{0}/{1}:latest', env.REGISTRY, env.IMAGE_NAME) || '' }}
+          # MÁGICA PARA FICAR RÁPIDO: Cache nativo do GitHub Actions
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
