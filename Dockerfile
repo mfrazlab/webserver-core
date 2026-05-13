@@ -38,8 +38,9 @@ RUN apt-get update && apt-get install -y \
         php${PHP_VERSION}-tokenizer php${PHP_VERSION}-xmlreader php${PHP_VERSION}-xmlwriter php${PHP_VERSION}-xsl \
         php${PHP_VERSION}-zip php${PHP_VERSION}-mailparse php${PHP_VERSION}-inotify php${PHP_VERSION}-maxminddb \
         php${PHP_VERSION}-protobuf php${PHP_VERSION}-opcache php${PHP_VERSION}-memcached \
+    && ln -s /usr/local/lsws/bin/openlitespeed /usr/bin/openlitespeed \
     # --- Composer ---
-    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
+    &&  curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
     # --- Limpeza de Camada (DEVE ser aqui para reduzir o tamanho real do upload) ---
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
