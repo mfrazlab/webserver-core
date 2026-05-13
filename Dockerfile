@@ -13,14 +13,14 @@ RUN apt-get update && apt-get install -y \
         lsb-release \
         unzip \
         git \
-    # --- Repositórios Oficiais (Nginx, OpenLiteSpeed, PHP Sury) ---
+    # --- Repositórios Oficiais ---
     && curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor -o /usr/share/keyrings/nginx.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/nginx.gpg] https://nginx.org/packages/mainline/debian bookworm nginx" > /etc/apt/sources.list.d/nginx.list \
     && wget -O - https://rpms.litespeedtech.com/debian/lst_repo.gpg | gpg --dearmor -o /usr/share/keyrings/litespeed.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/litespeed.gpg] https://rpms.litespeedtech.com/debian/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/openlitespeed.list \
     && wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg \
     && echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list \
-    # --- Instalação (Servidores + PHP Full) ---
+    # --- Instalação ---
     && apt-get update \
     && apt-get install -y --no-install-recommends \
         nginx apache2 openlitespeed \
@@ -39,7 +39,10 @@ RUN apt-get update && apt-get install -y \
         php${PHP_VERSION}-zip php${PHP_VERSION}-mailparse php${PHP_VERSION}-inotify php${PHP_VERSION}-maxminddb \
         php${PHP_VERSION}-protobuf php${PHP_VERSION}-opcache php${PHP_VERSION}-memcached \
     # --- Composer ---
-    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
+    # --- Limpeza de Camada (DEVE ser aqui para reduzir o tamanho real do upload) ---
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # --- ionCube Loader (Multi-Arch) ---
 RUN ARCH=$(uname -m); \
@@ -56,8 +59,7 @@ RUN ARCH=$(uname -m); \
     fi \
     && rm -rf /tmp/ioncube*
 
-# Limpeza Final e User Setup
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/*
+# User Setup
 RUN useradd -m -d /home/container/ -s /bin/bash container
 
 USER container
