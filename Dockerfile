@@ -61,10 +61,10 @@ RUN ARCH=$(uname -m); \
     && rm -rf /tmp/ioncube*
 
 # User Setup
-RUN useradd -m -d /home/container/ -s /bin/bash container
+# RUN useradd -m -d /home/container/ -s /bin/bash container
 
-USER container
-ENV USER=container HOME=/home/container
-WORKDIR /home/container
+# USER container
+# ENV USER=container HOME=/home/container
+# WORKDIR /home/container
 
 STOPSIGNAL SIGINT
